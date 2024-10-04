@@ -22,14 +22,23 @@
 текстом, эта же таблица
 
 |Заголовок_1|
+
 | Имя пакета | Версия | Ссылка Nexus | Ссылка Harbor | SonarQube баннеры |
+
 | пакет_1    | 1.0    | [URL_NEXUS](#)    | [URL_HARBOR](#)    | Banners           |
+
 | пакет_2    | 2.1    | [URL_NEXUS](#)    | [URL_HARBOR](#)    | Banners           |
+
 | пакет_3    | 3.1    | [URL_NEXUS](#)    | [URL_HARBOR](#)    | Banners           |
+
 |Заголовок_2|
+
 | Имя пакета | Версия | Ссылка Nexus | Ссылка Harbor | SonarQube баннеры |
+
 | пакет_1    | 1.0    | [URL_NEXUS](#)    | [URL_HARBOR](#)    | Banners           |
+
 | пакет_2    | 2.1    | [URL_NEXUS](#)    | [URL_HARBOR](#)    | Banners           |
+
 | пакет_3    | 3.1    | [URL_NEXUS](#)    | [URL_HARBOR](#)    | Banners           |
 
 
