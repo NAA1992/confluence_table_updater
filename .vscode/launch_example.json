@@ -1,0 +1,23 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python Debugger: Current File",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "env": {
+                "CONFLUENCE_LOGIN": "LOGIN",
+                "CONFLUENCE_PASSWORD": "PASSWORD",
+                "CONFLUENCE_URL": "https://conf.digitalms.ru/pages/viewpage.action?pageId=88429727",
+                "PACKAGE_HEADER": "Kafka",
+                "PACKAGE_NAME": "Пакет Python",
+                "PACKAGE_VERSION": "3.11.4",
+                "PACKAGE_NEXUS": "TEST Nexus_LINK",
+                "PACKAGE_HARBOR": "Docker Harbor Link",
+                "SONAR_FLAG": ""
+            }
+        }
+    ]
+}

@@ -1,0 +1,8 @@
+sonar.projectKey=projectKey_example
+sonar.host.url=https://sonar.example.com
+sonar.login=HASH_LOGIN_PASS
+sonar.sourceEncoding=UTF-8
+
+sonar.exclusions=**/*.java
+sonar.java.binaries=**/target/classes
+sonar.findbugs.allowuncompiledcode=true
