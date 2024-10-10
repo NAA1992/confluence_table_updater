@@ -58,6 +58,7 @@
 - "PACKAGE_NEXUS": "TEST Nexus_LINK", - URL к Nexus (необязательно, может отсутствовать)
 - "PACKAGE_HARBOR": "Docker Harbor Link", - URL к Harbor
 - "SONAR_FLAG": "" - Если пустое значение (или нет переменной) не будет добавлять SonarQube баннеры. Иначе будет пытаться обращаться к sonar-project.properties который лежит рядом со скриптом и на его основе будет строить баннеры
+- "SONAR_CONFIG_PATH": "./" - Путь к файлу sonar-project.properties (без его указания в пути). Если не указывать - по умолчанию будет брать из текущей папки (рядом со скриптом)
 
 Обязательное содержимое sonar-project.properties:
 - sonar.projectKey=projectKey_example - ключ проекта

@@ -16,7 +16,8 @@
                 "PACKAGE_VERSION": "3.11.4",
                 "PACKAGE_NEXUS": "TEST Nexus_LINK",
                 "PACKAGE_HARBOR": "Docker Harbor Link",
-                "SONAR_FLAG": ""
+                "SONAR_FLAG": "",
+                "SONAR_CONFIG_PATH": ""
             }
         }
     ]

@@ -42,11 +42,11 @@ def check_important_environments():
     return all_is_good
 
 def read_sonar_properties():
-    file_name = 'sonar-project.properties'
+    fullname_of_file = os.path.join(sonar_path, sonar_filename)
     
     # Проверяем, что файл существует рядом с исполняемым скриптом
-    if not os.path.exists(file_name):
-        raise FileNotFoundError(f"Файл '{file_name}' не найден.")
+    if not os.path.exists(fullname_of_file):
+        raise FileNotFoundError(f"Файл '{fullname_of_file}' не найден.")
 
     # Инициализируем переменные для хранения значений
     project_key = None
@@ -55,7 +55,7 @@ def read_sonar_properties():
 
     try:
         # Открываем файл и читаем построчно
-        with open(file_name, 'r', encoding='utf-8') as f:
+        with open(fullname_of_file, 'r', encoding='utf-8') as f:
             for line in f:
                 # Убираем пробелы в начале и в конце строки
                 line = line.strip()
@@ -121,6 +121,11 @@ if __name__ == "__main__":
     # Sonar баннеры (сверка исходников), номер колонки. Нумерация начинается с 0
     sonar_flag = os.getenv('SONAR_FLAG', '')
     sonar_num_cell = 5
+    # Путь до папки с файлом SONAR
+    sonar_path = os.path.abspath(os.getenv('SONAR_CONFIG_PATH', './'))
+    if not sonar_path:
+        sonar_path = os.path.abspath("./")
+    sonar_filename = 'sonar-project.properties'
     
     
     # Собираем все переменные окружения в DICT для дальнейшей обработки
