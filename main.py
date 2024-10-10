@@ -67,6 +67,8 @@ def read_sonar_properties():
                     host_url = line.split('=', 1)[1].strip()
                 elif line.startswith('sonar.login='):
                     login = line.split('=', 1)[1].strip()
+                if all([project_key, host_url, login]):
+                    break
 
         # Проверяем, что все значения найдены и не пустые
         if not all([project_key, host_url, login]):
@@ -114,6 +116,9 @@ if __name__ == "__main__":
     version_num_cell = 1
     # Ссылка на Nexus пакета, номер колонки. Нумерация начинается с 0
     package_nexus = os.getenv('PACKAGE_NEXUS', '')
+    if package_nexus:
+        # Создаем тег <a> с гиперссылкой для Nexus
+        package_nexus = BeautifulSoup('<a href="{url}">{text}</a>'.format(url=package_nexus, text=package_nexus), 'html.parser')
     nexus_num_cell = 4
     # Ссылка на Harbor пакета, номер колонки. Нумерация начинается с 0
     package_harbor = os.getenv('PACKAGE_HARBOR', '')
@@ -278,28 +283,36 @@ if __name__ == "__main__":
         if found_row:
             # Обновляем ячейки, если строка найдена
             cells = found_row.find_all('td')
-            if cells[nexus_num_cell].string == package_nexus and cells[harbor_num_cell].string == package_harbor:
+            # Парсим колонку с Nexus ссылкой, вытаскиваем из <td> (тега таблицы)
+            current_nexus_cell = BeautifulSoup(str(cells[nexus_num_cell]), 'html.parser')
+            if current_nexus_cell.td:
+                current_nexus_cell = current_nexus_cell.td.decode_contents()
+            
+            # Сравниваем строки Nexus, Harbor, Sonar
+            if str(current_nexus_cell) == str(package_nexus) and cells[harbor_num_cell].string == package_harbor:
                 if sonar_num_cell in env_data:
-                    # Преобразуем оба значения в BeautifulSoup объекты
-                    current_soup = BeautifulSoup(str(cells[sonar_num_cell]), 'html.parser')
-                    expected_soup = BeautifulSoup(str(env_data[sonar_num_cell]), 'html.parser')
-                    # Извлекаем содержимое внутри <td> для current
-                    if current_soup.td:
-                        current_content = current_soup.td.decode_contents()
+                    # Парсим колонку с SonarQube, вытаскиваем из <td> (тега таблицы)   
+                    current_sonar_cell = BeautifulSoup(str(env_data[sonar_num_cell]), 'html.parser')
+                    if current_sonar_cell.td:
+                        current_sonar_cell = str(current_sonar_cell.td.decode_contents())
                     else:
-                        current_content = str(current_soup)
+                        current_sonar_cell = str(current_sonar_cell)
                     # Извлекаем содержимое для expected
-                    expected_content = str(expected_soup)
+                    expected_sonar = str(env_data[sonar_num_cell])
                     # Сравниваем текстовое содержимое обоих объектов
-                    if current_content.strip() == expected_content.strip():
+                    if current_sonar_cell.strip() == expected_sonar.strip():
                         print("Нет необходимости обновлять Confluence - информация уже занесена")
                         sys.exit(0)
                 else:
                     print("Нет необходимости обновлять Confluence - информация уже занесена")
                     sys.exit(0)
 
-            cells[nexus_num_cell].string = env_data[nexus_num_cell]
+            # Заменяем содержимое ячейки на гиперссылку
+            cells[nexus_num_cell].string = ''  # Очищаем содержимое. Можно использовать .clear() как показано ниже
+            cells[nexus_num_cell].append(env_data[nexus_num_cell])
+            # Harbor текстом обычным вставляем
             cells[harbor_num_cell].string = env_data[harbor_num_cell]
+            # Sonar наподобие nexus, только здесь не гиперссылка, а плашки Sonar
             if sonar_num_cell in env_data:
                 cells[sonar_num_cell].clear()  # Очищаем содержимое ячейки перед вставкой
                 cells[sonar_num_cell].append(env_data[sonar_num_cell])  # Добавляем HTML как дочерний элемент
@@ -311,11 +324,8 @@ if __name__ == "__main__":
             for i in range(column_count):
                 new_row.append(soup.new_tag('td'))
                 if i in env_data:
-                    if sonar_num_cell in env_data:
-                        if sonar_num_cell == i:
-                            new_row.contents[i].append(env_data[sonar_num_cell])  # Добавляем HTML как дочерний элемент)
-                        else:
-                            new_row.contents[i].string = env_data[i]
+                    if i in [sonar_num_cell, nexus_num_cell]:
+                        new_row.contents[i].append(env_data[i])  # Добавляем HTML как дочерний элемент
                     else:
                         new_row.contents[i].string = env_data[i]
             

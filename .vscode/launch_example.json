@@ -11,11 +11,11 @@
                 "CONFLUENCE_LOGIN": "LOGIN",
                 "CONFLUENCE_PASSWORD": "PASSWORD",
                 "CONFLUENCE_URL": "https://conf.digitalms.ru/pages/viewpage.action?pageId=88429727",
-                "PACKAGE_HEADER": "Kafka",
+                "PACKAGE_HEADER": "vault",
                 "PACKAGE_NAME": "Пакет Python",
                 "PACKAGE_VERSION": "3.11.4",
-                "PACKAGE_NEXUS": "TEST Nexus_LINK",
-                "PACKAGE_HARBOR": "Docker Harbor Link",
+                "PACKAGE_NEXUS": "https://nexus.domain.com/repository/anyname/",
+                "PACKAGE_HARBOR": "images.domain.com/project/repository/name:tag-example-main-ad888bd",
                 "SONAR_FLAG": "",
                 "SONAR_CONFIG_PATH": ""
             }
