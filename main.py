@@ -5,6 +5,8 @@ import os
 import sys
 import requests
 
+from .libraries.harbor_tool import harbor_class
+
 
 def getenv_case_insensitive(var_name):
     #MARK: getenv_case_insensitive
@@ -337,6 +339,15 @@ if __name__ == "__main__":
             else:
                 # Добавляем в конец, если других заголовков нет
                 table_body.append(new_row)
+
+
+        # Блок работы с Harbor. Передаем ссылку на имэдж, вытаскиваем отчет о скане уязвимостей
+        #try:
+        #    harbor = harbor_class(package_harbor, confluence_login, confluence_password) # Логин и пароль от Harbor
+        #    filepath_csv_with_reports_scan = harbor.export_csv_report()
+        #except Exception as e:
+        #    print(e)
+        #    pass
 
         # Получение обновленного HTML
         updated_html = str(soup)
