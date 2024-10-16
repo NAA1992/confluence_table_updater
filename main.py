@@ -5,7 +5,7 @@ import os
 import sys
 import requests
 
-from .libraries.harbor_tool import harbor_class
+# from .libraries.harbor_tool import harbor_class
 
 
 def getenv_case_insensitive(var_name):
