@@ -4,135 +4,150 @@ from urllib.parse import urlparse, parse_qs
 import os
 import sys
 import requests
+import inspect
 
 # from .libraries.harbor_tool import harbor_class
 
 
-def getenv_case_insensitive(var_name):
-    #MARK: getenv_case_insensitive
-    # Функция для поиска переменной в окружении в любых регистрах
-    # Преобразуем имя переменной в нижний регистр для поиска
-    var_name_lower = var_name.lower()
-    
-    # Проходим по всем переменным окружения и сравниваем их имена в нижнем регистре
-    for key, value in os.environ.items():
-        if key.lower() == var_name_lower:
-            return value
-    return None
-
-def check_important_environments():
-    #MARK: check_important_environments
-    # Проверяем переменные окружения на заполняемость. Значения не должны быть пустыми, а так же все переменные должны быть объявлены
-    required_envs = {
-        "CONFLUENCE_LOGIN": confluence_login,
-        "CONFLUENCE_PASSWORD": confluence_password,
-        "PACKAGE_HEADER": package_header,
-        "PACKAGE_NAME": package_name,
-        "PACKAGE_VERSION": package_version,
-        # "PACKAGE_NEXUS": package_nexus,
-        "PACKAGE_HARBOR": package_harbor,
-        "CONFLUENCE_URL": confluence_url
-    }
-    
-    all_is_good = True
-    
-    for var_name, value in required_envs.items():
-        if value is None or not value:
-            print(f"Установите переменную окружения {var_name}")
-            all_is_good = False
-
-    return all_is_good
-
-def read_sonar_properties():
-    fullname_of_file = os.path.join(sonar_path, sonar_filename)
-    
-    # Проверяем, что файл существует рядом с исполняемым скриптом
-    if not os.path.exists(fullname_of_file):
-        raise FileNotFoundError(f"Файл '{fullname_of_file}' не найден.")
-
-    # Инициализируем переменные для хранения значений
-    project_key = None
-    host_url = None
-    login = None
-
-    try:
-        # Открываем файл и читаем построчно
-        with open(fullname_of_file, 'r', encoding='utf-8') as f:
-            for line in f:
-                # Убираем пробелы в начале и в конце строки
-                line = line.strip()
-                
-                # Проверяем, начинается ли строка с нужных параметров
-                if line.startswith('sonar.projectKey='):
-                    project_key = line.split('=', 1)[1].strip()
-                elif line.startswith('sonar.host.url='):
-                    host_url = line.split('=', 1)[1].strip()
-                elif line.startswith('sonar.login='):
-                    login = line.split('=', 1)[1].strip()
-                if all([project_key, host_url, login]):
-                    break
-
-        # Проверяем, что все значения найдены и не пустые
-        if not all([project_key, host_url, login]):
-            raise ValueError("Не удалось найти все необходимые параметры или они пустые.")
+class ConfluenceTableUpdater:
+    #MARK: ConfluenceTableUpdater
+    def __init__(self):
+        # Таблица имеет вид
+        # | Заголовок |
+        # | col1 | col2 | col3 ...
+        # | val1 | val2 | val3 ...
+        # ...
+        # | Следующий заголовок |
+        # | col1 | col2 | col3 ...
+        # | val1 | val2 | val3 ...
+        # ...
         
-        # Возвращаем найденные значения
-        return project_key, host_url, login
+        # Связь наименования параметра в окружении с переменной в Python
+        self.environments = {}
+        self.num_critical_params = 7 # Количество критически важных ключей в self.environments
+        
 
-    except FileNotFoundError as e:
-        print(f"Ошибка: {e}")
-    except ValueError as e:
-        print(f"Ошибка: {e}")
-    except Exception as e:
-        print(f"Неизвестная ошибка: {e}")
+        # Данные для подключения к Confluence
+        self.environments["CONFLUENCE_URL"] = None
+        self.environments["CONFLUENCE_LOGIN"] = None
+        self.environments["CONFLUENCE_PASSWORD"] = None
+        
+        # Данные, которые будут записаны в таблицу (колонки)
+        self.environments["PACKAGE_HEADER"] = None # Заголовок в таблице. Обязательное
+        self.environments["PACKAGE_NAME"] = None # Имя пакета (ключевое поле)
+        self.environments["PACKAGE_VERSION"] = None # Версия пакета (ключевое поле)
+        self.environments["PACKAGE_HARBOR"] = None # Ссылка на Harbor пакета. Обязательное поле
+        
+        # Отделил, т.к. ниже идут уже не критически важные параметры
+        self.environments["PACKAGE_NEXUS"] = None # Ссылка на Nexus пакета
+        
+        # Параметры, получаемые из окружения для SONAR
+        self.environments["SONAR_FLAG"] = None # Флаг, что нужно добавлять еще Sonar баннеры (скан исходников)
+        self.environments["SONAR_CONFIG_PATH"] = "./" # Путь до папки с настройками sonar проекта
+
+
+        self.sonar_filename = 'sonar-project.properties' # наименование файла с настройками sonar проекта
+        self.sonar_banners = None
+        
+        # номер колонки. Нумерация начинается с 0
+        self.numcell_package_name = 0
+        self.numcell_package_version = 1
+        self.numcell_package_nexus = 4
+        self.numcell_package_harbor = 3
+        self.numcell_sonar_banners = 5
+        
+
+    
+    def get_environment_params(self):
+        #MARK: get_environment_params
+        # Получение значений из переменных окружения
+        for envName, value in self.environments.items():
+            envValue = os.getenv(envName, '')
+            self.environments[envName] = envValue
+            # Для Nexus ссылки создаем тег <a> (гиперссылку в HTML)
+            if envName == 'PACKAGE_NEXUS' and envValue:
+                envValue = BeautifulSoup('<a href="{url}">{text}</a>'.format(url=package_nexus, text=package_nexus), 'html.parser')
+                self.environments[envName] = envValue
+            # Для пути к Sonar папке создаем абсолютный путь
+            elif envName == 'SONAR_CONFIG_PATH':
+                envValue = os.path.abspath(envValue)
+                self.environments[envName] = envValue
+        
+
+    def getenv_case_insensitive(self, var_name):
+        #MARK: getenv_case_insensitive
+        # Функция для поиска переменной в окружении в любых регистрах
+        # Преобразуем имя переменной в нижний регистр для поиска
+        var_name_lower = var_name.lower()
+        
+        # Проходим по всем переменным окружения и сравниваем их имена в нижнем регистре
+        for key, value in os.environ.items():
+            if key.lower() == var_name_lower:
+                return value
+        return None
+
+    def check_important_environments(self):
+        #MARK: check_important_environments
+        # Проверяем переменные окружения на заполняемость. 
+        # Значения не должны быть пустыми, а так же все переменные должны быть объявлены
+        all_is_good = True
+        for i, envName, value in (range(self.num_critical_params), self.environments.items()):
+            if not value:
+                print(f"Установите переменную окружения {envName}")
+                all_is_good = False
+        return all_is_good
+          
+        
+
+    def read_sonar_properties(self):
+        fullname_of_file = os.path.join(sonar_path, sonar_filename)
+        
+        # Проверяем, что файл существует рядом с исполняемым скриптом
+        if not os.path.exists(fullname_of_file):
+            raise FileNotFoundError(f"Файл '{fullname_of_file}' не найден.")
+
+        # Инициализируем переменные для хранения значений
+        project_key = None
+        host_url = None
+        login = None
+
+        try:
+            # Открываем файл и читаем построчно
+            with open(fullname_of_file, 'r', encoding='utf-8') as f:
+                for line in f:
+                    # Убираем пробелы в начале и в конце строки
+                    line = line.strip()
+                    
+                    # Проверяем, начинается ли строка с нужных параметров
+                    if line.startswith('sonar.projectKey='):
+                        project_key = line.split('=', 1)[1].strip()
+                    elif line.startswith('sonar.host.url='):
+                        host_url = line.split('=', 1)[1].strip()
+                    elif line.startswith('sonar.login='):
+                        login = line.split('=', 1)[1].strip()
+                    if all([project_key, host_url, login]):
+                        break
+
+            # Проверяем, что все значения найдены и не пустые
+            if not all([project_key, host_url, login]):
+                raise ValueError("Не удалось найти все необходимые параметры или они пустые.")
+            
+            # Возвращаем найденные значения
+            return project_key, host_url, login
+
+        except FileNotFoundError as e:
+            print(f"Ошибка: {e}")
+        except ValueError as e:
+            print(f"Ошибка: {e}")
+        except Exception as e:
+            print(f"Неизвестная ошибка: {e}")
 
 
 if __name__ == "__main__":
     #MARK: MAIN
 
-    # Получение значений из переменных окружения. Верхний регистр
-    confluence_login = os.getenv('CONFLUENCE_LOGIN', '')
-    confluence_password = os.getenv('CONFLUENCE_PASSWORD', '')
     
     
-    confluence_url = os.getenv('CONFLUENCE_URL', '')
-
-    # Таблица имеет вид
-    # | Заголовок |
-    # | col1 | col2 | col3 ...
-    # | val1 | val2 | val3 ...
-    # ...
-    # | Следующий заголовок |
-    # | col1 | col2 | col3 ...
-    # | val1 | val2 | val3 ...
-    # ...
-    
-    #package_header = Заголовок в таблице
-    package_header = os.getenv('PACKAGE_HEADER')
-    
-    # Имя пакета, номер колонки. Нумерация начинается с 0
-    package_name = os.getenv('PACKAGE_NAME', '')
-    name_num_cell = 0
-    # Версия пакета, номер колонки. Нумерация начинается с 0
-    package_version = os.getenv('PACKAGE_VERSION', '')
-    version_num_cell = 1
-    # Ссылка на Nexus пакета, номер колонки. Нумерация начинается с 0
-    package_nexus = os.getenv('PACKAGE_NEXUS', '')
-    if package_nexus:
-        # Создаем тег <a> с гиперссылкой для Nexus
-        package_nexus = BeautifulSoup('<a href="{url}">{text}</a>'.format(url=package_nexus, text=package_nexus), 'html.parser')
-    nexus_num_cell = 4
-    # Ссылка на Harbor пакета, номер колонки. Нумерация начинается с 0
-    package_harbor = os.getenv('PACKAGE_HARBOR', '')
-    harbor_num_cell = 3
-    # Sonar баннеры (сверка исходников), номер колонки. Нумерация начинается с 0
-    sonar_flag = os.getenv('SONAR_FLAG', '')
-    sonar_num_cell = 5
-    # Путь до папки с файлом SONAR
-    sonar_path = os.path.abspath(os.getenv('SONAR_CONFIG_PATH', './'))
-    if not sonar_path:
-        sonar_path = os.path.abspath("./")
-    sonar_filename = 'sonar-project.properties'
     
     
     # Собираем все переменные окружения в DICT для дальнейшей обработки
@@ -364,3 +379,6 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"Ошибка при обновлении таблицы: {e}")
         sys.exit(1)
+        
+import os
+print(os.path.abspath(''))
