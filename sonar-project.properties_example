@@ -1,6 +1,6 @@
-sonar.projectKey=projectKey_example
-sonar.host.url=https://sonar.example.com
-sonar.login=HASH_LOGIN_PASS
+sonar.projectKey=container-images_redos7c_opensearch_AAAABBBBCCCCDDDD
+sonar.host.url=https://codeqa.ANYDOMAIN.ru
+sonar.login=sqp_9999888877776666
 sonar.sourceEncoding=UTF-8
 
 sonar.exclusions=**/*.java
