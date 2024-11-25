@@ -2,13 +2,10 @@ from atlassian import Confluence
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse, parse_qs
 import os
-import sys
-import requests
-# import inspect
 from typing import Union, Tuple
-from itertools import islice
 
-# from .libraries.harbor_tool import harbor_class
+
+
 
 
 class ConfluenceTableUpdater:
@@ -335,18 +332,24 @@ class ConfluenceTableUpdater:
             print("Нет необходимости обновлять Confluence - информация уже занесена")
             return
 
+
+        # Получение обновленного HTML
+        updated_html = str(soup)
+        return updated_html
+
+
+    def download_scan_csv(self):
+        #MARK: download_scan_csv
+        # from .libraries.harbor_tool import harbor_class
         # Блок работы с Harbor. Передаем ссылку на имэдж, вытаскиваем отчет о скане уязвимостей
         #try:
         #    harbor = harbor_class(package_harbor, confluence_login, confluence_password) # Логин и пароль от Harbor
         #    filepath_csv_with_reports_scan = harbor.export_csv_report()
         #except Exception as e:
         #    print(e)
-        #    pass
-
-        # Получение обновленного HTML
-        updated_html = str(soup)
-        return updated_html
-
+        pass
+        
+        
 
     def main(self):
         #MARK: main
